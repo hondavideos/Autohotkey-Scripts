@@ -1,113 +1,356 @@
-﻿#Requires AutoHotkey v2.0
+#Requires AutoHotkey v2.0
 #SingleInstance Force
+; Alt Q closes annoying window opened with Control + \
+; F5 Compiles
+; Ensure Brackets are together
 
-;Script to recompile 'Outlook Scripts.ahk' script WORKING
+#HotIf WinActive("ahk_exe Code.exe") ; bracket needs to touch winactive
+F5::Send "^{F5}"
+#HotIf
+
+; Deleting a word works in FE 					{Control + Backspace}
+; #HotIf WinActive("ahk_exe explorer.exe") ; comment out so works in virtual, uncomment if problems occur
+^BS::Send("^+{Left}{Del}")
+
+; Hotkey to type Password for metamask 			{Control + Shift + M}
+<+!m:: {
+	A_Clipboard := "" ;empty 
+	if (!WinActive("ahk_exe KeePassXC.exe"))
+		{
+			ToolTip "Win not active"
+			Run "C:\Program Files\KeePassXC\KeePassXC.exe"
+			WinWaitActive "ahk_exe KeePassXC.exe"
+			WinActivate "ahk_exe KeePassXC.exe"
+			Sleep 200
+			Send "^fmeta" ;unlock database and copy meta pw
+			Sleep 500 
+			Send "^c"
+			Sleep 200
+			Send "!{Tab}"
+			Sleep 500
+			Send "^v{Enter}" ;paste into metamask
+			ToolTip
+		}
+		else {
+			WinWaitActive "ahk_exe KeePassXC.exe"
+			WinActivate "ahk_exe KeePassXC.exe"
+			Sleep 400
+			Send "^fmeta" ;unlock database and copy meta pw
+			Sleep 500 
+			Send "^c"
+			Sleep 200
+			Send "!{Tab}"
+			Sleep 500
+			Send "^v{Enter}" ;paste into metamask
+			ToolTip
+		}
+}
+
+; If firefox open rename drawing 				{Shift + Alt + F}
+#HotIf WinActive("ahk_exe firefox.exe") ; outside of the hotkey function?
++!f:: {
+	ToolTip "Active"
+	VartoSend := StrReplace(A_Clipboard, "/", "_")	
+	Send VartoSend " - Drawing"
+	Sleep 200 
+	Send "{Enter}"
+	ToolTip
+}
+#HotIf
+
+!g:: { ; Highlight Green then press shift to paste into PA
+	Send "!hh"
+	;Sleep 200 ;was 200
+	Send "{Up}{Up}{Up}"
+	;Sleep 200
+	Send "{Left}{Left}{Left}{Left}{Enter}"
+	;Sleep 200 
+	Send "{Down}"
+	;Sleep 100
+	Send "^c"
+	ToolTip "Copied"
+	If (!ClipWait(1)){
+		MsgBox "Clip not filled"
+		return
+	}
+	else 
+		ToolTip A_Clipboard
+	;want to add variable into if statement, replace T3
+	;function needs a string right
+
+	if (KeyWait("Shift", "D T3") = 1) { ;return 0 if timed out, 1 = true = success key pressed
+		Send "^v"
+		Sleep 200
+		Send "{PgDn}"
+	}
+	ToolTip
+}
+
+!r:: { ; Highlight red then press shift to paste into PA
+	Send "!hh"
+	;Sleep 200 ;was 200
+	Send "{Up}{Up}{Up}"
+	;Sleep 200
+	Send "{Left}{Left}{Left}{Left}{Left}{Left}{Left}{Left}{Left}{Enter}"
+	;Sleep 200 
+	Send "{Down}"
+	;Sleep 100
+	Send "^c"
+	ToolTip "Copied"
+	If (!ClipWait(1)){
+		MsgBox "Clip not filled"
+		return
+	}
+	else 
+		ToolTip A_Clipboard
+	;want to add variable into if statement, replace T3
+	if (KeyWait("Shift", "D T3") = 1) { ;return 0 if timed out, 1 = true = success key pressed
+		Send "^v"
+		Sleep 200
+		Send "{PgDn}"
+	}
+	else {
+		ToolTip "Didn't press Shift in "
+		return
+	}
+	Sleep 500
+	ToolTip
+}
+
+!y:: { ; Highlight red then press shift to paste into PA
+	Send "!hh"
+	;Sleep 200
+	Send "{Up}{Up}{Up}{Up}"
+	;Sleep 200
+	Send "{Left}{Left}{Left}{Left}{Left}{Left}{Enter}"
+	;Sleep 200 
+	Send "{Down}"
+	;Sleep 100
+	Send "^c"
+	ToolTip "Copied"
+	If (!ClipWait(1)){
+		MsgBox "Clip not filled"
+		return
+	}
+	else 
+		ToolTip A_Clipboard
+	KeyWait "Shift", "D"
+	Send "^v"
+	Sleep 200
+	Send "{PgDn}"
+	ToolTip
+}
+
+; Exit Script 									{Shift + Escape}
+<+Escape:: {
+	MsgBox "Exiting Script"
+	ExitApp
+	Sleep 3000
+	ToolTip
+}
+
+; FanSelect Rename								{Control + Alt + F}
+^!f::
+{
+	; if FanSelect isn't open then open it
+	if WinExist("ahk_exe FANselect.exe") {
+		ToolTip "Window Exists"
+		WinActivate "ahk_exe FANselect.exe"
+		oldClip := A_Clipboard ; save old clip to restore later
+		A_Clipboard := "" ; empty clipboard FIXED ISSUE
+		Send "^c" ; copy highlighed
+
+		if (!ClipWait(2)){ ; if clipwait not filled
+			ToolTip "Clipboard not filled in 2s"
+			Sleep 400
+			Tooltip
+			Exit
+		}
+		else {
+			article := A_Clipboard ; copied article -> variable
+		}	
+
+		ToolTip "Press D"
+		if (KeyWait("d", "D T8") = 0) { ; d means download
+			ToolTip "Exit now"
+			Sleep 300
+			ToolTip
+			Exit
+		}
+		Send "+{Tab}"
+		Sleep 200 ; maybe needed, jesus
+		Send "{Enter}"
+		; wait for win explorer to open
+		Sleep 1000 ; was 800, 1200 
+		Send "^c"
+		ToolTip ; clear press d 
+
+		if (ClipWait(2) = 0) { ; if clipwait times out
+			MsgBox "Type key and article not filled in 2s"
+			Exit
+		}
+		else { ; otherwize 
+			fullType := A_Clipboard
+			sleep 400		
+			article := StrReplace(article, "/", "_") ; Replace all '/' with '_'
+			fullType := StrSplit(fullType, "_")
+			fullForPaste := article " - " fullType[2]
+			Send fullForPaste "{Enter}"
+			A_Clipboard := oldClip ;restoring old clipboard
+		}
+	}
+	else {
+		;if fan select not open then open it 
+		Run "C:\Users\Jack\Documents\Misc\Programs\FS_Portable\FANselect.exe"
+		ToolTip "Opening FanSelect"
+		Sleep 1500 
+		ToolTip
+	}	
+}
+
+;shortcut for m^3/s
+^!m:: ;										 	{Control + Alt + M}
+{
+	Send "m^+{=}3^+{=}/s{Space}"
+}
+
+;Script to recompile 'Outlook Scripts.ahk' 		{Control + Alt + C}
 ^!c:: 
 {
-scriptPath := 'C:\Users\Jack\Documents\Misc\AHK Script\Outlook Scripts.ahk'
-outputPath := 'C:\Users\Jack\Documents\Misc\AHK Script\Outlook Scripts2.exe'
-compilerPath := "C:\Program Files\AutoHotkey\Compiler\Ahk2Exe.exe"
-
-Run compilerPath " /in " scriptPath " /out " outputPath
-	;path := "C:\Users\Jack\Documents\Misc\AHK Script"
-	;Run "explorer.exe"
-	;Sleep 500
-	;Send "^lC:\Users\Jack\Documents\Misc\AHK Script{Enter}" ;Go to AHK Scripts DIR
-	;Run ("C:\Program Files\AutoHotkey\Compiler\Ahk2Exe.exe "/in" "C:\Users\Jack\Documents\Misc\AHK Script\Outlook Scripts.ahk" "/out" "C:\Users\Jack\Documents\Misc\AHK Script\Outlook Scripts2.exe"")
-	/*
-	Send "#e"
-	Sleep 500
-	Send "^lC:\Users\Jack\Documents\Misc\AHK Script{Enter}" ;Go to AHK Scripts DIR
-	Sleep 300
-	Send "o" ;Shift + F10 right clicks.
-	Sleep 300
-	Send "+{F10}{Down}{Down}{Down}{Down}{Down}{Enter}"
-	Sleep 1000 
-	Send "{Tab}"
-	Sleep 300
-	Send "{Enter}"
-	;Sleep 2000
-	;Send "^w"*/
+	scriptPath := "C:\Users\Jack\Documents\Misc\AHK Script"
+	startupPath := "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp"
+	Run "explorer.exe"
+	Sleep 600 ;was 500
+	Send "^l" scriptPath "{Enter}" ;Go to AHK Scripts DIR
+	;Sleep 6700
+	ToolTip "Press Enter"
+	
+	if (KeyWait("Enter", "D T3") = 0) ;if function failed
+	{
+		MsgBox "Not opening startfolder"
+		Exit
+	}
+	else
+	{
+		Run "explorer.exe"
+		Sleep 600
+		Send "^l" startupPath "{Enter}" ;Go to AHK Scripts DIR
+		ToolTip
+	}
 }
 
-;Script to open explorer and search article in Citrix (NOT WORKING)
+; Replace all '_' with '/'						{Alt + V}	
+!v::
+{
+	originalClip := A_Clipboard 
+	if InStr(originalClip,"_") {
+		replaceUnder := StrReplace(A_Clipboard, "_", "/")
+			Send replaceUnder
+	}
+		Else {
+			replaceSlash := StrReplace(A_Clipboard, "/", "_")
+			Send replaceSlash
+		}
+}
+
+; Open explorer and search article in VD 		{Control + Shift + E}
+#HotIf WinActive("ahk_exe CDViewer.exe")
 ^+e::
 {
+	; Want to add an input box to paste article in? may need another hotkey, keypress with timeout
 	Send "^+{Esc}"
-	Sleep 300
-	Send "!fnExplorer"
-	;Sleep 300
-	;Send "{Enter}{Enter}"
-	;Send "!d" ;Alt D to focus search, confilicted with !d for tech signature
-	;Send "\\Dekun-fsmdt.za.ziehl-abegg.de\UK\Common\Technical Department\Tech Library\JACK{Enter}"
+	Sleep 500 ;was 600
+	Send "!f"
+	Sleep 200 ; was 300
+	Send "n"
+	Sleep 350 ; was 300 
+	Send "Explorer{Enter}"
+	Sleep 1700
+	Send "^l" ;Control L not Alt D to focus search, confilicted with !d for tech signature
+	Sleep 200 ;was 300
+	Send "\\Dekun-fsmdt.za.ziehl-abegg.de\UK\Common\Technical Department{Enter}"
+	Sleep 300 ;was 300
+	Send "^f"
+	Sleep 400 ;was 900 600
+	varToSend := StrReplace(A_Clipboard, "/", "_") ; Replace all '/' with '_'
+	sleep 200
+	Send varToSend
+	Sleep 500 ;was 300 
+	Send "{Enter}"
 }
+#HotIf
 
-!a:: ;attach quote T&C's file in email
+!a:: ;attach T&C's then change signature		{Alt + A}
 {
 	Send "!nafb" ;Open Explorer when in Outlook
 	Send "^l" ;Alt D to focus search, confilicted with !d for tech signature
 	Send "\\Dekun-fsmdt.za.ziehl-abegg.de\UK\Common\Technical Department\Tech Library\JACK{Enter}"
-	Sleep 3000
+	Sleep 2600 ; was 3000
 	Send "{Tab}{Tab}{Tab}"
-	Sleep 1900
+	Sleep 1100 ;WAS 1900
 	Send "{Tab}{Tab}{Tab}{Down}{Down}{Down}{Enter}"
-	;potentially type g in filename then down 1 
+	;Add quote signature
+	Sleep 1500
+	Send "!has{Down}{Down}{Enter}"
 }
 
-;Script to create folder with current date then enter
+; Create folder with current date				{Control + Shift + Alt + N}
 ^+!n::
 {
-	;oldClip := A_Clipboard
 	timeString := FormatTime(, "dd.MM.yy") ;lowercase mm is minutes so used MM 
-	A_Clipboard := timeString
+	Send "^+n"
+	Sleep 250 ;was 200
+	Send timeString "{Enter}"
+	Sleep 250 ;was 300 
+	Send "{Enter}"
+}
+
+^+!m:: ; 										{Control + Shift + Alt + M}
+{
+	timeString := FormatTime(, "dd.MM.yy") ;lowercase mm is minutes so used MM 
 	Send "^+n"
 	Sleep 200
-	Send A_Clipboard "{Enter}"
-	Sleep 200
-	;A_Clipboard := oldClip
+	Send timeString "  - JB"
 	Sleep 100
-	Send "{Enter}"
-	;A_Clipboard := StrReplace(A_Clipboard, "ABC", "DEF")
-	;curPath := explorerGetPath() ;calls below function 
-	;DirCreate(curPath '\' timeString)
-	;PUT BACK OLD CLIPBOARD
+	Send "{Left}{Left}{Left}{Left}{Left}"
 }
 
 /*
-		SIGNATURE SCRIPTS
+												SIGNATURE SCRIPTS
 */
 
-^!x:: ;General Signature
+^!x:: ; General
 {
 	Send "!m{Enter}"
 	Sleep 300
 	Send "!has{Down}{Enter}{Up}{Up}{Up}Hi ,{Enter}{Enter}Hope you're doing well. {Up}{Up}{Left}"
 }
 
-^+x:: ;General Signature No Hi
+^+x:: ; General No Hi
 {
 	Send "!m{Enter}"
 	Sleep 300
 	Send "!has{Down}{Enter}"
 }
 
-!d:: ;Tech Signature No Hi
+^+d::
+!d:: ; Tech No Hi
 {
-	;Send "!m{Enter}" ;QUOTED OUT DUE TO ADDING AN ENTER AT THE START IF NO TECH INBOX
-	;Sleep 300
-	Send "!has{Enter}"
+	Send "!m{Enter}" ; QUOTED OUT DUE TO ADDING AN ENTER AT THE START IF NO TECH INBOX
+	Sleep 300
+	Send "!has{Enter}{Backspace}"
 }
 
-^!d:: ;Tech Signature with Hi
+^!d:: ; Tech with Hi
 {
 	Send "!m{Enter}"
 	Sleep 300
-	Send "!has{Enter}{Up}{Up}{Up}Hi ,{Enter}{Enter}Hope you're doing well. {Up}{Up}{Left}"
+	Send "!has{Enter}{Up}{Up}{Up}Hi ,{Left}"
 }
 
-^+z:: ;Quote Signature No Hi
+^+z:: ; Quote No Hi
 {
-	Send "!m{Enter}"
+	; Send "!m{Enter}"
 	Sleep 300
 	Send "!has{Down}{Down}{Enter}"
 }
